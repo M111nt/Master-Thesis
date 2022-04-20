@@ -134,14 +134,14 @@ for ii = 1:length(vg_loop)
         
         %h = 2*pi*hbar
         itot(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) ) ;
-        
-        %itot(kk) = q*2*k*T/(2*pi*hbar) *  ( log( 1+exp((Efs-Enm_new(kk)-E0_new(1,ii))/(k*T/q)) ) - log( 1+exp((Efd-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) ) ;
-        
+                
     end
     
     I_total(1,ii) = sum(itot);   
     
 end 
+
+
 
 figure(2); hold on; 
 plot(vg_loop, I_total(1,:)*1e-3/(2*(W+H)),'-m','LineWidth',2);
@@ -150,7 +150,49 @@ ylabel('I_{DS}(mA/\mum)');
 title('The 1D ballistic simulation for V_{GS} and I_{DS}');
 
 
-figure(3); hold on;
+T_loop = 100:200:500;
+
+for tt = 1:length(T_loop)
+    
+    T = T_loop(tt);
+    
+    for ii = 1:length(vg_loop)
+        
+    vg = vg_loop(ii);
+    
+        for kk =1:6%number of subbands
+        
+            n0_t = @(E,E0)  sqrt(q)*D1D(E, Enm_new(kk)+E0, m_nm_new(kk)*m0, alpha_nm_new(kk)).*(fd(E,Efs,T) + fd(E,Efd,T));
+        
+            n0_tot_t = @(E0) ( integral(@(E) n0_t(E,E0), E0+Enm_new(kk), 2) );
+        
+            %calculate Uscf
+            E0_new_t(1,ii) = fzero(@(E0) - E0 - (vg-vt) + q*n0_tot_t(E0)/(Csigma), vg/2);
+        
+            %h = 2*pi*hbar
+            itot_t(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new_t(1,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) ) ;
+                
+        end
+    
+        I_total_t(1,ii) = sum(itot_t);
+    end 
+    
+    %y(tt) = I_total_t(1,:)*1e-3/(2*(W+H));
+    
+    figure(3); hold on; 
+    plot(vg_loop, I_total_t(1,:)*1e-3/(2*(W+H)));
+    
+    xlabel('V_{GS} (V)');
+    ylabel('I_{DS}(mA/\mum)');
+    title('The 1D ballistic simulation for voltage transfer characteristic in different temperature');
+    %legend('100K', '200K', '300K', '400K', '500K');
+    legend('100K', '300K', '500K');
+
+end 
+
+
+
+%figure(4); hold on;
 
 
 
