@@ -1,6 +1,5 @@
-
 %-------------------------------
-% For 1D ballistic
+% For 2D ballistic
 %-------------------------------
 
 clear;
@@ -15,7 +14,6 @@ e0 = 8.854e-12; %vacuum permittivity
 T = 300; %tempreture
 
 
-tw=13e-9; %well thickness
 tox=5e-9; %oxide thickness
 Lg=80e-9; %gate length
 Efs=0; %source fermi level
@@ -31,6 +29,9 @@ ertw=13; %well er
 W=30e-9; 
 H=5e-9;
 
+% 2D channel....channel thickness
+tw=40e-9;
+
 % nonparabolicity factor
 alpha = 1/Eg*(1-ms/m0)^2; 
 
@@ -43,9 +44,9 @@ vt = 0;
 
 %------------------------------------------------------------
 %calculte gate capacitance in ballistic model 
-Cox=erox*e0/tox;
-Cq=q^2*0.03*m0/(pi*hbar^2);
-Cg = Cox * Cq / (Cox + Cq);
+Cox = erox*e0/tox;
+Cc = ertw*e0/(0.36*tw);
+Cg = Cox * Cc / (Cox + Cc);
 
 %Csigma = 6.0990e-4; %calculated by previous matlab code
 Csigma = Cg;
@@ -104,7 +105,7 @@ figure(1);hold on;
 contour(X,Y,Enm);
 xlabel('Index n of width in x direction');
 ylabel('Index m of width in y direction');
-title('The energy of square well with infinte height in 1D ballistic');
+title('The energy of square well with infinte height in 2D ballistic');
 
 store_new = sortrows(store, 1);
 Enm_new = store_new(:,1);
@@ -123,9 +124,11 @@ for ii = 1:length(vg_loop)
     
     vg = vg_loop(ii);
     
+    itot=0;
     for kk =1:6%number of subbands
         
-        n0 = @(E,E0)  sqrt(q)*D1D(E, Enm_new(kk)+E0, m_nm_new(kk)*m0, alpha_nm_new(kk)).*(fd(E,Efs,T) + fd(E,Efd,T));
+        %2D ballistic
+        n0 = @(E,E0)  q*D2D(E, Enm_new(kk)+E0, m_nm_new(kk)*m0, alpha_nm_new(kk)).*(fd(E,Efs,T) + fd(E,Efd,T));
         
         n0_tot = @(E0) ( integral(@(E) n0(E,E0), E0+Enm_new(kk), 2) );
         
@@ -134,6 +137,7 @@ for ii = 1:length(vg_loop)
         
         %h = 2*pi*hbar
         itot(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) ) ;
+        
                 
     end
     
@@ -147,7 +151,7 @@ figure(2); hold on;
 plot(vg_loop, I_total(1,:)*1e-3/(2*(W+H)),'-m','LineWidth',2);
 xlabel('V_{GS} (V)');
 ylabel('I_{DS}(mA/\mum)');
-title('The 1D ballistic simulation for V_{GS} and I_{DS}');
+title('The 2D ballistic simulation for V_{GS} and I_{DS}');
 
 x=vg_loop;
 y=I_total(1,:)*1e-3/(2*(W+H));
@@ -166,6 +170,7 @@ fnplt(fnder(pp_DC),'b');
 ylabel('g_{m}(mS/\mum)');xlabel('V_{GS} (V)');
 
 
+
 T_loop = 100:200:500;
 
 for tt = 1:length(T_loop)
@@ -177,9 +182,8 @@ for tt = 1:length(T_loop)
     vg = vg_loop(ii);
     
         for kk =1:6%number of subbands
-            
-            %1D ballistic
-            n0_t = @(E,E0)  sqrt(q)*D1D(E, Enm_new(kk)+E0, m_nm_new(kk)*m0, alpha_nm_new(kk)).*(fd(E,Efs,T) + fd(E,Efd,T));
+        
+            n0_t = @(E,E0)  q*D2D(E, Enm_new(kk)+E0, m_nm_new(kk)*m0, alpha_nm_new(kk)).*(fd(E,Efs,T) + fd(E,Efd,T));
         
             n0_tot_t = @(E0) ( integral(@(E) n0_t(E,E0), E0+Enm_new(kk), 2) );
         
@@ -188,7 +192,9 @@ for tt = 1:length(T_loop)
         
             %h = 2*pi*hbar
             itot_t(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new_t(1,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) ) ;
-                
+            
+         
+            
         end
     
         I_total_t(1,ii) = sum(itot_t);
@@ -201,7 +207,7 @@ for tt = 1:length(T_loop)
     
     xlabel('V_{GS} (V)');
     ylabel('I_{DS}(mA/\mum)');
-    title('The 1D ballistic simulation for voltage transfer characteristic in different temperature');
+    title('The 2D ballistic simulation for voltage transfer characteristic in different temperature');
     %legend('100K', '200K', '300K', '400K', '500K');
     legend('100K', '300K', '500K');
 
@@ -224,11 +230,15 @@ end
 
 
 %---------------------------------------------------------------------
-function D = D1D(E,En,ms,alpha) % 1D density of states
+function D = D2D(E,En,ms,alpha) % 1D density of states
 
 hbar = 6.626e-34;
 
-D = sqrt(2*ms) .* (1 + 2*alpha*(E-En) ./ (pi*hbar*sqrt((E-En).*(1+alpha*(E-En))))).*(E>En) ;
+D = ms/(pi*hbar^2) * (1+2*alpha*(E-En)).* (E>En);
+
+% hbar = 1.054e-34;
+% 
+% D = ms/(2*pi*hbar^2) * (1+2*alpha*(E-En)).* (E>En);
 
 end
 
@@ -239,5 +249,3 @@ q = 1.602e-19;
 f = 1./(1+exp((E-Ef)/(k*T/q)));
 
 end
-
-
