@@ -14,10 +14,10 @@ e0 = 8.854e-12; %vacuum permittivity
 T = 300; %tempreture
 
 
-tox=5e-9; %oxide thickness
-Lg=80e-9; %gate length
+Lg=50e-9; %gate length
 Efs=0; %source fermi level
-erox=18; %oxide er
+erox=20; %oxide er
+tox=5e-9; %oxide thickness
 
 
 %bandgap, effective mass, and permitivitty.
@@ -73,7 +73,6 @@ for nn =1:sqrt(No_subs)
         %The rest part is too small compared to 1. 
         %The gamma cannot get a correct value.
         %We should calculate the Enm_p first.
-        %gamma(nn,mm) = sqrt(1 + (2*alpha*hbar^2*pi^2/ms)*((nn/W)^2+(mm/H)^2) );
         
         %Enm_potential 
         Enm_p = (1/q)*((hbar/(2*pi))^2*pi^2/(2*ms))*((nn/W)^2+(mm/H)^2);
@@ -111,13 +110,13 @@ store_new = sortrows(store, 1);
 Enm_new = store_new(:,1);
 alpha_nm_new = store_new(:,2);
 m_nm_new = store_new(:,3);
+%Enm_new = Enm_new - Enm_new(1);
 %gamma_new = store_new(:,4);
 
 Efd= Efs-vd;
 
-%E0_new = zeros(1:131);
 itot = zeros(1,6);
-%I_total = zeros(1:131);
+
 
 %integral the total electron
 for ii = 1:length(vg_loop)
@@ -230,15 +229,15 @@ end
 
 
 %---------------------------------------------------------------------
-function D = D2D(E,En,ms,alpha) % 1D density of states
+function D = D2D(E,En,ms,alpha) % 2D density of states
 
-hbar = 6.626e-34;
-
-D = ms/(pi*hbar^2) * (1+2*alpha*(E-En)).* (E>En);
-
-% hbar = 1.054e-34;
+% hbar = 6.626e-34;
 % 
-% D = ms/(2*pi*hbar^2) * (1+2*alpha*(E-En)).* (E>En);
+% D = ms/(pi*hbar^2) * (1+2*alpha*(E-En)).* (E>En);
+
+hbar = 1.054e-34;
+
+D = ms/(2*pi*hbar^2) * (1+2*alpha*(E-En)).* (E>En);
 
 end
 
