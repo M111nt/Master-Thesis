@@ -139,10 +139,10 @@ for jj = 1:length(vd_loop)
             n0_tot = @(E0) ( integral(@(E) n0(E,E0), E0+Enm_new(kk), 2) );
         
             %calculate Uscf
-            E0_new(1,ii) = fzero(@(E0) - E0 - (vg-vt) + q*n0_tot(E0)/(Csigma), vg/2);
+            E0_new(jj,ii) = fzero(@(E0) - E0 - (vg-vt) + q*n0_tot(E0)/(Csigma), vg/2);
         
             %h = 2*pi*hbar
-            itot(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) ) ;
+            itot(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new(jj,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(jj,ii))/(k*T/q))) ) ;
                 
         end
     
@@ -229,7 +229,7 @@ for tt = 1:length(T_loop)
     
     for ii = 1:length(vg_loop)
         
-    vg = vg_loop(ii);
+        vg = vg_loop(ii);
     
         for kk =1:6%number of subbands
             

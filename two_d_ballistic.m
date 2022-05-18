@@ -37,8 +37,8 @@ alpha = 1/Eg*(1-ms/m0)^2;
 
 
 %-----------------------------------------------------------
-vg_loop = -0.3:0.01:1.4; 
-vd = 0.5;
+vg_loop = -0.3:0.01:2.0; 
+vd_loop = 0.5:0.1:1.0;
 %vs = 0;
 vt = 0;
 
@@ -65,7 +65,7 @@ Enm =zeros(10);
 store = zeros(100,4);
 
 ctrl = 1;
-
+%%
 for nn =1:sqrt(No_subs)
     
     for mm=1:sqrt(No_subs)
@@ -96,15 +96,15 @@ for nn =1:sqrt(No_subs)
     end
 end
 
-x = linspace(1,10,10);
-y = linspace(1,10,10);
-[X,Y] = meshgrid(x,y);
-
-figure(1);hold on;
-contour(X,Y,Enm);
-xlabel('Index n of width in x direction');
-ylabel('Index m of width in y direction');
-title('The energy of square well with infinte height in 2D ballistic');
+% x = linspace(1,10,10);
+% y = linspace(1,10,10);
+% [X,Y] = meshgrid(x,y);
+% 
+% figure(1);hold on;
+% contour(X,Y,Enm);
+% xlabel('Index n of width in x direction');
+% ylabel('Index m of width in y direction');
+% title('The energy of square well with infinte height in 2D ballistic');
 
 store_new = sortrows(store, 1);
 Enm_new = store_new(:,1);
@@ -113,63 +113,99 @@ m_nm_new = store_new(:,3);
 %Enm_new = Enm_new - Enm_new(1);
 %gamma_new = store_new(:,4);
 
-Efd= Efs-vd;
-
 itot = zeros(1,6);
 
+%% integral the total electron plot the Vgs VS Ids
 
-%integral the total electron
-for ii = 1:length(vg_loop)
+vg_loop = -0.3:0.01:2.0; 
+vd_loop = 0.5:0.1:1.0;
+
+for jj = 1:length(vd_loop)
     
-    vg = vg_loop(ii);
+    vd = vd_loop(jj);
+    Efd= Efs-vd;
     
-    itot=0;
-    for kk =1:6%number of subbands
+    for ii = 1:length(vg_loop)
+    
+        vg = vg_loop(ii);
+    
+        %itot=0;
+        for kk =1:6%number of subbands
         
-        %2D ballistic
-        n0 = @(E,E0)  q*D2D(E, Enm_new(kk)+E0, m_nm_new(kk)*m0, alpha_nm_new(kk)).*(fd(E,Efs,T) + fd(E,Efd,T));
+            %2D ballistic
+            n0 = @(E,E0)  q*D2D(E, Enm_new(kk)+E0, m_nm_new(kk)*m0, alpha_nm_new(kk)).*(fd(E,Efs,T) + fd(E,Efd,T));
         
-        n0_tot = @(E0) ( integral(@(E) n0(E,E0), E0+Enm_new(kk), 2) );
+            n0_tot = @(E0) ( integral(@(E) n0(E,E0), E0+Enm_new(kk), 2) );
         
-        %calculate Uscf
-        E0_new(1,ii) = fzero(@(E0) - E0 - (vg-vt) + q*n0_tot(E0)/(Csigma), vg/2);
+            %calculate Uscf
+            E0_new(jj,ii) = fzero(@(E0) - E0 - (vg-vt) + q*n0_tot(E0)/(Csigma), vg/2);
         
-        %h = 2*pi*hbar
-        itot(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) ) ;
+            %h = 2*pi*hbar
+            itot(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new(jj,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(jj,ii))/(k*T/q))) ) ;
         
                 
-    end
+        end
     
-    I_total(1,ii) = sum(itot);   
+        I_total(jj,ii) = sum(itot);   
     
-end 
+    end 
+    
+    %voltage characteristic
+    figure(2); hold on; 
+    plot(vg_loop, I_total(jj,:)*1e-3/(2*(W+H)));
+    xlabel('V_{GS} (V)');
+    ylabel('I_{DS}(mA/\mum)');
+    title('The 2D ballistic simulation for V_{GS} and I_{DS}');
+    legend('V_{DS} = 0.5', 'V_{DS} = 0.6', 'V_{DS} = 0.7','V_{DS} = 0.8','V_{DS} = 0.9','V_{DS} = 1.0');
+    
+   
+    %gm
+    x=vg_loop;
+    y=I_total(jj,:)*1e-3/(2*(W+H));
 
+    x1=(length(vg_loop)-1)/2;
 
-
-figure(2); hold on; 
-plot(vg_loop, I_total(1,:)*1e-3/(2*(W+H)),'-m','LineWidth',2);
-xlabel('V_{GS} (V)');
-ylabel('I_{DS}(mA/\mum)');
-title('The 2D ballistic simulation for V_{GS} and I_{DS}');
-
-x=vg_loop;
-y=I_total(1,:)*1e-3/(2*(W+H));
-
-x1=(length(vg_loop)-1)/2;
-
-pp_DC = csaps(x,y, [1,ones(1,x1),repmat(5,1,x1)], [], ...
+    pp_DC = csaps(x,y, [1,ones(1,x1),repmat(5,1,x1)], [], ...
             [ones(1,x1), repmat(5,1,x1), 0]);
         %fnplt(pp_DC,'b');        
 
-ylabel('I_{DS}(mA/\mum)');xlabel('V_{GS} (V)');
-%         
-figure(4);hold on;
+    ylabel('I_{DS}(mA/\mum)');xlabel('V_{GS} (V)');
+             
+    figure(3);hold on;
 
-fnplt(fnder(pp_DC),'b');
-ylabel('g_{m}(mS/\mum)');xlabel('V_{GS} (V)');
+    fnplt(fnder(pp_DC));
+    legend('V_{DS} = 0.5', 'V_{DS} = 0.6', 'V_{DS} = 0.7','V_{DS} = 0.8','V_{DS} = 0.9','V_{DS} = 1.0');
+    ylabel('g_{m}(mS/\mum)');xlabel('V_{GS} (V)');
+    title('The 2D ballistic simulation for V_{GS} and g_{m}');
+    
+end
 
 
+%% plot the Vgs VS lg(Id)
 
+kk = 1;
+I_new = log10(I_total);
+figure(11); hold on; 
+title('The 2D ballistic simulation for V_{GS} and log_{10}(I_{DS})');
+xlabel('V_{GS}(V)');
+ylabel('log_{10}(I_{DS})');
+   
+for jj = 1: length(vd_loop)
+        
+    plot(vg_loop,I_new(kk,:),'LineWidth',1);
+        
+    kk = kk + 1;
+    
+    legend('V_{DS} = 0.5', 'V_{DS} = 0.6', 'V_{DS} = 0.7','V_{DS} = 0.8','V_{DS} = 0.9','V_{DS} = 1.0');
+
+end
+
+
+%% temperature study
+
+vg_loop = -0.3:0.01:2.0;
+vd = 0.5;
+Efd= Efs-vd;
 T_loop = 100:200:500;
 
 for tt = 1:length(T_loop)
@@ -178,7 +214,7 @@ for tt = 1:length(T_loop)
     
     for ii = 1:length(vg_loop)
         
-    vg = vg_loop(ii);
+        vg = vg_loop(ii);
     
         for kk =1:6%number of subbands
         
@@ -190,9 +226,8 @@ for tt = 1:length(T_loop)
             E0_new_t(1,ii) = fzero(@(E0) - E0 - (vg-vt) + q*n0_tot_t(E0)/(Csigma), vg/2);
         
             %h = 2*pi*hbar
-            itot_t(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new_t(1,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) ) ;
             
-         
+            itot_t(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new_t(1,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(1,ii))/(k*T/q))) ) ;
             
         end
     
@@ -201,7 +236,7 @@ for tt = 1:length(T_loop)
     
     %y(tt) = I_total_t(1,:)*1e-3/(2*(W+H));
     
-    figure(3); hold on; 
+    figure(4); hold on; 
     plot(vg_loop, I_total_t(1,:)*1e-3/(2*(W+H)));
     
     xlabel('V_{GS} (V)');
@@ -213,22 +248,60 @@ for tt = 1:length(T_loop)
 end 
 
 
+%% integral the total electron plot the Vds VS Ids
 
-%figure(4); hold on;
+vg_loop = 0.5:0.1:1.0;
+vd_loop = -0.3:0.01:2.0;
+
+for jj = 1:length(vg_loop)
+    
+    vg = vg_loop(jj);
+    
+    
+    for ii = 1:length(vd_loop)
+    
+        vg = vd_loop(ii);
+        Efd= Efs-vd;
+    
+        %itot=0;
+        for kk =1:6%number of subbands
+        
+            %2D ballistic
+            n0 = @(E,E0)  q*D2D(E, Enm_new(kk)+E0, m_nm_new(kk)*m0, alpha_nm_new(kk)).*(fd(E,Efs,T) + fd(E,Efd,T));
+        
+            n0_tot = @(E0) ( integral(@(E) n0(E,E0), E0+Enm_new(kk), 2) );
+        
+            %calculate Uscf
+            E0_new(jj,ii) = fzero(@(E0) - E0 - (vg-vt) + q*n0_tot(E0)/(Csigma), vg/2);
+        
+            %h = 2*pi*hbar
+            itot(kk) = 2*q*k*T/hbar * (log(1+exp((Efs-Enm_new(kk)-E0_new(jj,ii))/(k*T/q))) - log(1+exp((Efd-Enm_new(kk)-E0_new(jj,ii))/(k*T/q))) ) ;
+        
+                
+        end
+    
+        I_total(jj,ii) = sum(itot);   
+    
+    end 
+    
+    %voltage characteristic
+    figure(12); hold on; 
+    plot(vd_loop, I_total(jj,:)*1e-3/(2*(W+H)));
+    xlabel('V_{DS} (V)');
+    ylabel('I_{DS}(mA/\mum)');
+    title('The 2D ballistic simulation for V_{DS} and I_{DS}');
+    legend('V_{GS} = 0.5', 'V_{GS} = 0.6', 'V_{GS} = 0.7','V_{GS} = 0.8','V_{GS} = 0.9','V_{GS} = 1.0');
+    
+             
+    
+end
 
 
 
 
 
 
-
-
-
-
-
-
-
-%---------------------------------------------------------------------
+%% ---------------------------------------------------------------------
 function D = D2D(E,En,ms,alpha) % 2D density of states
 
 % hbar = 6.626e-34;
