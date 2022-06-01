@@ -1,3 +1,8 @@
+
+%%
+% temperature study
+%%
+
 clear all;
 clc;
 %close all;
@@ -18,7 +23,7 @@ Ef=0;
 erox=18;
 ertw=13;
 
-Tr=1;
+Tr=0.75;
 W = 10e-9;H=5e-9;
 
 Cox = erox*e0/tox; % planar
@@ -37,16 +42,20 @@ lambda = 3/pi * (tw + tox*ertw/erox);% 2D MOSFET
 %lambda = sqrt(ertw/((W/H)*erox) * tox*tw); % rectangualr GAA
 
 etopvec = linspace(-0.5,1);
-T=300;
+
 alpha=1;% non parabolicity 
 %
-for ii=1:length(etopvec)
-    n0 = @(E) q*D2Dfun(E,etopvec(ii),ms,alpha).*fd(E,Ef,T);
-    n0_tot(ii) = integral(n0,etopvec(ii),0.7);
-end
+
+
+    
+% for ii=1:length(etopvec)
+%     n0 = @(E) q*D2Dfun(E,etopvec(ii),ms,alpha).*fd(E,Ef,T);
+%     n0_tot(ii) = integral(n0,etopvec(ii),0.7);
+% end
+
 % figure(111);plot(etopvec,n0_tot);
 
-pp =spline(etopvec,n0_tot);
+% pp =spline(etopvec,n0_tot);
 
 % currenet-voltage characteristics
 
@@ -54,9 +63,23 @@ nbr_steps=11;
 
 Vgvec=linspace(-0.1,1,nbr_steps);
 %Vdvec = [ 0.05 0.5];
-Vdvec=0:0.05:1;
+%Vdvec=0:0.05:1;
+Vdvec=0.5;
+T_loop=100:200:500;
 
 VT=0.5;
+for tt = 1:length(T_loop)
+    
+    T = T_loop(tt);% temperature study
+    
+    for ii=1:length(etopvec)
+    n0 = @(E) q*D2Dfun(E,etopvec(ii),ms,alpha).*fd(E,Ef,T);
+    n0_tot(ii) = integral(n0,etopvec(ii),0.7);
+    end
+    
+    pp =spline(etopvec,n0_tot);
+
+    
 for kk=1:length(Lg1)
     Lg=Lg1(kk);
 for jj=1:length(Vdvec)
@@ -99,37 +122,34 @@ for jj=1:length(Vdvec)
 end
 %%
 % Transfer characteristics
-
 figure(1);hold on;
-title('Transfer characteristics when Vt=0.5V, Tr=1');
-plot(Vgvec-VT,itot(11,:)*1e-3,'b','LineWidth',2);
-% legend('V_{DS} = 0.5 V');
-plot(Vgvec-VT,itot(2,:)*1e-3,'--b','LineWidth',2);
-legend('V_{DS} = 0.5 V','V_{DS} = 0.1 V');
+title('Temperature study when Vds=0.5V, Vt=0.5V, Tr=0.75');
+plot(Vgvec-VT,itot(1,:)*1e-3,'LineWidth',2);
+
+legend('100K','300K','500K');
 xlabel('V_{GS} (V)');
 ylabel('I_{DS} (mA/\mu m)');
 
 
 %gm
-
-kk = 1;
-for kk = 1:1:5
-    x=Vgvec;
-    qq = 1 + 4*kk;
-    y=itot(qq,:)*1e-3/(2*(W+H));
-%     y=itot(6,:)*1e-3/(2*(W+H));
-    x1=(length(Vgvec)-1)/2;
-    pp_DC = csaps(x,y, [1,ones(1,x1),repmat(5,1,x1)], [], ...
-            [ones(1,x1), repmat(5,1,x1), 0]);
-        
-    figure(2);hold on;
-    fnplt(fnder(pp_DC));
-    
-    
-    ylabel('g_{m}(mS/\mum)');xlabel('V_{GS} (V)');
-    legend('V_{DS} = 0.2', 'V_{DS} = 0.4', 'V_{DS} = 0.6','V_{DS} = 0.8','V_{DS} = 1.0');
-    title('The quasi 2D ballistic simulation for V_{GS} and g_{m} when Tr = 0.5');
-end 
+% kk = 1;
+% for kk = 1:1:5
+%     x=Vgvec;
+%     qq = 1 + 4*kk;
+%     y=itot(qq,:)*1e-3/(2*(W+H));
+% %     y=itot(6,:)*1e-3/(2*(W+H));
+%     x1=(length(Vgvec)-1)/2;
+%     pp_DC = csaps(x,y, [1,ones(1,x1),repmat(5,1,x1)], [], ...
+%             [ones(1,x1), repmat(5,1,x1), 0]);
+%         
+%     figure(2);hold on;
+%     fnplt(fnder(pp_DC));
+%     
+%     
+%     ylabel('g_{m}(mS/\mum)');xlabel('V_{GS} (V)');
+%     legend('V_{DS} = 0.2', 'V_{DS} = 0.4', 'V_{DS} = 0.6','V_{DS} = 0.8','V_{DS} = 1.0');
+%     title('The quasi 2D ballistic simulation for V_{GS} and g_{m} when Tr = 0.5');
+% end 
         
         
 % SS (mV/dec)   
@@ -160,6 +180,7 @@ end
 % figure(4);plot(Vdvec,Ron);
 % gd (mS/um)
 % plot(Vgvec,itot);hold on;
+end
 end
 %%
 % figure(100); scatter(Lg1,ss);% figure(200); scatter(W1,ss);

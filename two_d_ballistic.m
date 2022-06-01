@@ -16,25 +16,25 @@ T = 300; %tempreture
 
 Lg=50e-9; %gate length
 Efs=0; %source fermi level
-erox=20; %oxide er
-tox=5e-9; %oxide thickness
 
 
 %bandgap, effective mass, and permitivitty.
 Eg = 0.5; 
 ms = 0.023*m0;
 ertw=13; %well er
+erox=18; %oxide er
 
 %Nanosheet height and width
-W=30e-9; 
+W=10e-9; 
 H=5e-9;
 
 % 2D channel....channel thickness
 tw=40e-9;
+tox=5e-9; %oxide thickness
 
 % nonparabolicity factor
-alpha = 1/Eg*(1-ms/m0)^2; 
-
+%alpha = 1/Eg*(1-ms/m0)^2; 
+alpha=1;% non parabolicity 
 
 %-----------------------------------------------------------
 vg_loop = -0.3:0.01:2.0; 
@@ -52,6 +52,8 @@ Cg = Cox * Cc / (Cox + Cc);
 Csigma = Cg;
 Cd = 0;
 Cs = 0;
+
+lambda = 3/pi * (tw + tox*ertw/erox);% 2D MOSFET
 
 
 % subbands values

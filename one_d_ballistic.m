@@ -19,13 +19,14 @@ tw=13e-9; %well thickness
 tox=5e-9; %oxide thickness
 Lg=80e-9; %gate length
 Efs=0; %source fermi level
-erox=18; %oxide er
+
 
 
 %bandgap, effective mass, and permitivitty.
 Eg = 0.5; 
 ms = 0.023*m0;
 ertw=13; %well er
+erox=18; %oxide er
 
 %Nanosheet height and width
 W=30e-9; 
@@ -33,6 +34,7 @@ H=5e-9;
 
 % nonparabolicity factor
 alpha = 1/Eg*(1-ms/m0)^2; 
+
 
 
 %-----------------------------------------------------------
